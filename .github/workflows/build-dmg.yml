@@ -12,13 +12,17 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-13
+    env:
+      CXXFLAGS: "-Wno-error=deprecated-declarations -Wno-deprecated-declarations"
+      CFLAGS: "-Wno-error=deprecated-declarations -Wno-deprecated-declarations"
+      MACOSX_DEPLOYMENT_TARGET: "13.0"
     steps:
       - uses: actions/checkout@v4
 
       - name: Compilar (universal Intel + Apple Silicon)
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
           cmake --build build --config Release -j"$(sysctl -n hw.ncpu)"
 
       - name: Localizar .app
