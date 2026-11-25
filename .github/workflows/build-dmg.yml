@@ -1,0 +1,49 @@
+name: Build macOS DMG
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compilar (universal Intel + Apple Silicon)
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release -j"$(sysctl -n hw.ncpu)"
+
+      - name: Localizar .app
+        id: app
+        run: |
+          APP="$(find build -name 'EC Audio.app' -type d | head -n 1)"
+          echo "Encontrada: $APP"
+          test -n "$APP"
+          echo "path=$APP" >> "$GITHUB_OUTPUT"
+          lipo -archs "$APP/Contents/MacOS/EC Audio"
+
+      - name: Firma ad-hoc
+        run: codesign --force --deep --sign - "${{ steps.app.outputs.path }}"
+
+      - name: Crear DMG
+        run: ./scripts/make_dmg.sh "${{ steps.app.outputs.path }}" "EC-Audio.dmg"
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: EC-Audio-dmg
+          path: EC-Audio.dmg
+
+      - name: Publicar release (al crear un tag vX.Y.Z)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: EC-Audio.dmg
