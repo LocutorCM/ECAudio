@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-15-intel
+    runs-on: macos-13
     env:
       CXXFLAGS: "-Wno-error=deprecated-declarations -Wno-deprecated-declarations"
       CFLAGS: "-Wno-error=deprecated-declarations -Wno-deprecated-declarations"
@@ -38,7 +38,7 @@ jobs:
         run: codesign --force --deep --sign - "${{ steps.app.outputs.path }}"
 
       - name: Crear DMG
-        run: ./scripts/make_dmg.sh "${{ steps.app.outputs.path }}" "EC-Audio.dmg"
+        run: bash ./scripts/make_dmg.sh "${{ steps.app.outputs.path }}" "EC-Audio.dmg"
 
       - name: Subir artefacto
         uses: actions/upload-artifact@v4
